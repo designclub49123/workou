@@ -1,0 +1,50 @@
+import { Home2, BrifecaseTimer, Profile, Setting2 } from 'iconsax-react';
+import { NavLink } from '@/components/NavLink';
+import { cn } from '@/lib/utils';
+
+const MobileNav = () => {
+  const navItems = [
+    { icon: Home2, label: 'Home', path: '/' },
+    { icon: BrifecaseTimer, label: 'Jobs', path: '/jobs' },
+    { icon: Profile, label: 'Profile', path: '/profile' },
+    { icon: Setting2, label: 'Settings', path: '/settings' },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
+      <div className="flex items-center justify-around h-16 px-2">
+        {navItems.map(({ icon: Icon, label, path }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className="flex flex-col items-center justify-center flex-1 h-full gap-1 smooth-transition"
+            activeClassName="text-foreground"
+          >
+            {({ isActive }) => (
+              <>
+                <Icon
+                  size={24}
+                  variant={isActive ? 'Bold' : 'Outline'}
+                  className={cn(
+                    'smooth-transition',
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-xs font-medium smooth-transition',
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {label}
+                </span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
+    </nav>
+  );
+};
+
+export default MobileNav;
