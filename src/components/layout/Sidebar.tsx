@@ -2,13 +2,15 @@ import { Home2, BrifecaseTimer, Profile, Setting2, Sun1, Moon, LogoutCurve } fro
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 const Sidebar = () => {
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
 
   const navItems = [
-    { icon: Home2, label: 'Home', path: '/' },
+    { icon: Home2, label: 'Home', path: '/dashboard' },
     { icon: BrifecaseTimer, label: 'Jobs', path: '/jobs' },
     { icon: Profile, label: 'Profile', path: '/profile' },
     { icon: Setting2, label: 'Settings', path: '/settings' },
@@ -73,7 +75,11 @@ const Sidebar = () => {
             </>
           )}
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+          onClick={signOut}
+        >
           <LogoutCurve size={22} variant="Outline" />
           <span>Logout</span>
         </Button>
