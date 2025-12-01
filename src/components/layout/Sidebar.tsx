@@ -1,4 +1,4 @@
-import { Home2, BrifecaseTimer, Profile, Setting2, Sun1, Moon, LogoutCurve } from 'iconsax-react';
+import { Home2, BrifecaseTimer, Profile, Setting2, Sun1, Moon, LogoutCurve, SecurityUser, ClipboardText, AddCircle } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -7,13 +7,19 @@ import { Button } from '@/components/ui/button';
 
 const Sidebar = () => {
   const { theme, toggleTheme } = useTheme();
-  const { signOut } = useAuth();
+  const { signOut, userRole } = useAuth();
+
+  const isOrganizerOrAdmin = userRole === 'organizer' || userRole === 'admin';
+  const isAdmin = userRole === 'admin';
 
   const navItems = [
     { icon: Home2, label: 'Home', path: '/dashboard' },
     { icon: BrifecaseTimer, label: 'Jobs', path: '/jobs' },
+    ...(isOrganizerOrAdmin ? [{ icon: AddCircle, label: 'Post Job', path: '/post-job' }] : []),
+    { icon: ClipboardText, label: 'Applications', path: '/applications' },
     { icon: Profile, label: 'Profile', path: '/profile' },
     { icon: Setting2, label: 'Settings', path: '/settings' },
+    ...(isAdmin ? [{ icon: SecurityUser, label: 'Admin Panel', path: '/admin' }] : []),
   ];
 
   return (

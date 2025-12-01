@@ -1,13 +1,13 @@
-import { Home2, BrifecaseTimer, Profile, Setting2 } from 'iconsax-react';
+import { Home2, BrifecaseTimer, Profile, ClipboardText } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 
 const MobileNav = () => {
   const navItems = [
-    { icon: Home2, label: 'Home', path: '/' },
+    { icon: Home2, label: 'Home', path: '/dashboard' },
     { icon: BrifecaseTimer, label: 'Jobs', path: '/jobs' },
+    { icon: ClipboardText, label: 'Apps', path: '/applications' },
     { icon: Profile, label: 'Profile', path: '/profile' },
-    { icon: Setting2, label: 'Settings', path: '/settings' },
   ];
 
   return (
