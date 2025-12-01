@@ -7,7 +7,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { HambergerMenu, Home2, BrifecaseTimer, Profile, Setting2, LogoutCurve, Sun1, Moon } from 'iconsax-react';
+import { HambergerMenu, Home2, BrifecaseTimer, Profile, Setting2, LogoutCurve, Sun1, Moon, ClipboardText, AddCircle, SecurityUser } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,13 +16,19 @@ import { cn } from '@/lib/utils';
 const MobileDrawer = () => {
   const [open, setOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, userRole } = useAuth();
+
+  const isOrganizerOrAdmin = userRole === 'organizer' || userRole === 'admin';
+  const isAdmin = userRole === 'admin';
 
   const navItems = [
     { icon: Home2, label: 'Home', path: '/dashboard' },
     { icon: BrifecaseTimer, label: 'Jobs', path: '/jobs' },
+    ...(isOrganizerOrAdmin ? [{ icon: AddCircle, label: 'Post Job', path: '/post-job' }] : []),
+    { icon: ClipboardText, label: 'Applications', path: '/applications' },
     { icon: Profile, label: 'Profile', path: '/profile' },
     { icon: Setting2, label: 'Settings', path: '/settings' },
+    ...(isAdmin ? [{ icon: SecurityUser, label: 'Admin Panel', path: '/admin' }] : []),
   ];
 
   return (

@@ -11,6 +11,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Jobs from "./pages/Jobs";
+import PostJob from "./pages/PostJob";
+import Applications from "./pages/Applications";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -41,6 +43,16 @@ const App = () => (
               <Route path="/jobs" element={
                 <ProtectedRoute>
                   <Jobs />
+                </ProtectedRoute>
+              } />
+              <Route path="/post-job" element={
+                <ProtectedRoute allowedRoles={['organizer', 'admin']}>
+                  <PostJob />
+                </ProtectedRoute>
+              } />
+              <Route path="/applications" element={
+                <ProtectedRoute>
+                  <Applications />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
