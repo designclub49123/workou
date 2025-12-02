@@ -11,10 +11,15 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Jobs from "./pages/Jobs";
-import PostJob from "./pages/PostJob";
-import Applications from "./pages/Applications";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import PostJob from "./pages/PostJob";
+import Applications from "./pages/Applications";
+import SavedJobs from "./pages/SavedJobs";
+import Notifications from "./pages/Notifications";
+import ActivityFeed from "./pages/ActivityFeed";
+import ManageApplications from "./pages/ManageApplications";
+import EarningsCalculator from "./pages/EarningsCalculator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,53 +28,29 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/jobs" element={
-                <ProtectedRoute>
-                  <Jobs />
-                </ProtectedRoute>
-              } />
-              <Route path="/post-job" element={
-                <ProtectedRoute allowedRoles={['organizer', 'admin']}>
-                  <PostJob />
-                </ProtectedRoute>
-              } />
-              <Route path="/applications" element={
-                <ProtectedRoute>
-                  <Applications />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/post-job" element={<ProtectedRoute allowedRoles={['organizer', 'admin']}><PostJob /></ProtectedRoute>} />
+              <Route path="/applications" element={<ProtectedRoute><Applications /></ProtectedRoute>} />
+              <Route path="/saved-jobs" element={<ProtectedRoute><SavedJobs /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              <Route path="/activity" element={<ProtectedRoute><ActivityFeed /></ProtectedRoute>} />
+              <Route path="/manage-applications" element={<ProtectedRoute allowedRoles={['organizer', 'admin']}><ManageApplications /></ProtectedRoute>} />
+              <Route path="/earnings-calculator" element={<ProtectedRoute><EarningsCalculator /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </AuthProvider>
-        </BrowserRouter>
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

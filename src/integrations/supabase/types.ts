@@ -62,32 +62,44 @@ export type Database = {
         Row: {
           applicant_id: string
           applied_at: string | null
+          availability: string | null
           cover_letter: string | null
+          expected_wage: number | null
           id: string
           job_id: string
+          notes: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["application_status"] | null
+          years_experience: number | null
         }
         Insert: {
           applicant_id: string
           applied_at?: string | null
+          availability?: string | null
           cover_letter?: string | null
+          expected_wage?: number | null
           id?: string
           job_id: string
+          notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
+          years_experience?: number | null
         }
         Update: {
           applicant_id?: string
           applied_at?: string | null
+          availability?: string | null
           cover_letter?: string | null
+          expected_wage?: number | null
           id?: string
           job_id?: string
+          notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
+          years_experience?: number | null
         }
         Relationships: [
           {
@@ -98,6 +110,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_bookmarks_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       job_skills: {
         Row: {
@@ -140,6 +205,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          category_id: string | null
           city: string
           created_at: string | null
           description: string
@@ -166,6 +232,7 @@ export type Database = {
           workers_needed: number
         }
         Insert: {
+          category_id?: string | null
           city: string
           created_at?: string | null
           description: string
@@ -192,6 +259,7 @@ export type Database = {
           workers_needed: number
         }
         Update: {
+          category_id?: string | null
           city?: string
           created_at?: string | null
           description?: string
@@ -217,7 +285,15 @@ export type Database = {
           workers_hired?: number | null
           workers_needed?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jobs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "job_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -442,6 +518,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          id: string
+          related_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          related_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          related_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -513,6 +619,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_user_activity: {
+        Args: {
+          p_activity_type: string
+          p_description?: string
+          p_related_id?: string
+          p_title: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
