@@ -1,4 +1,4 @@
-import { Home2, BrifecaseTimer, DocumentText, Profile } from 'iconsax-react';
+import { Home2, BrifecaseTimer, MessageText, Profile } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 
@@ -6,7 +6,7 @@ const MobileNav = () => {
   const navItems = [
     { icon: Home2, label: 'Home', path: '/dashboard' },
     { icon: BrifecaseTimer, label: 'Jobs', path: '/jobs' },
-    { icon: DocumentText, label: 'Apps', path: '/applications' },
+    { icon: MessageText, label: 'Messages', path: '/messages' },
     { icon: Profile, label: 'Profile', path: '/profile' },
   ];
 
@@ -21,18 +21,25 @@ const MobileNav = () => {
           >
             {({ isActive }) => (
               <>
-                <Icon
-                  size={24}
-                  variant={isActive ? 'Bold' : 'Outline'}
-                  className={cn(
-                    'transition-colors duration-200',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                />
+                <div className={cn(
+                  'p-2 rounded-xl transition-all duration-200',
+                  isActive && 'bg-gradient-to-r from-rose-500 to-orange-500'
+                )}>
+                  <Icon
+                    size={22}
+                    variant={isActive ? 'Bold' : 'Outline'}
+                    className={cn(
+                      'transition-colors duration-200',
+                      isActive ? 'text-white' : 'text-muted-foreground'
+                    )}
+                  />
+                </div>
                 <span
                   className={cn(
-                    'text-[11px] font-medium transition-colors duration-200',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    'text-[11px] font-semibold transition-colors duration-200',
+                    isActive 
+                      ? 'text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500' 
+                      : 'text-muted-foreground'
                   )}
                 >
                   {label}
