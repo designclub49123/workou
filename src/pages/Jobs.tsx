@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Location, Clock, MoneyRecive, SearchNormal, Filter } from 'iconsax-react';
+import { Location, Clock, MoneyRecive, SearchNormal, Filter, Calendar, People } from 'iconsax-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { JobDetailsDialog } from '@/components/jobs/JobDetailsDialog';
 import { ApplyJobDialog } from '@/components/jobs/ApplyJobDialog';
+import { JobBookmarkButton } from '@/components/jobs/JobBookmarkButton';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Job {
   id: string;
@@ -32,6 +34,7 @@ interface Job {
   meal_provided: boolean;
   transportation_provided: boolean;
   status: string;
+  total_hours: number | null;
   organizer?: {
     full_name: string | null;
     rating: number | null;
@@ -53,6 +56,7 @@ const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCity, setFilterCity] = useState<string>('all');
   const [filterUrgent, setFilterUrgent] = useState<string>('all');
+  const [filterWage, setFilterWage] = useState<string>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
@@ -66,11 +70,10 @@ const Jobs = () => {
 
   useEffect(() => {
     filterJobs();
-  }, [searchTerm, filterCity, filterUrgent, jobs]);
+  }, [searchTerm, filterCity, filterUrgent, filterWage, jobs]);
 
   const fetchJobs = async () => {
     try {
-      // First fetch jobs
       const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
         .select(`
@@ -81,18 +84,17 @@ const Jobs = () => {
           )
         `)
         .eq('status', 'open')
+        .order('is_urgent', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (jobsError) throw jobsError;
 
-      // Then fetch organizer profiles separately
       const organizerIds = jobsData?.map(job => job.organizer_id) || [];
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('id, full_name, rating, total_jobs_completed')
         .in('id', organizerIds);
 
-      // Merge the data
       const jobsWithProfiles = jobsData?.map(job => {
         const organizer = profilesData?.find(p => p.id === job.organizer_id);
         return {
@@ -144,7 +146,8 @@ const Jobs = () => {
       filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.city.toLowerCase().includes(searchTerm.toLowerCase())
+        job.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.event_type?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -154,6 +157,11 @@ const Jobs = () => {
 
     if (filterUrgent === 'urgent') {
       filtered = filtered.filter(job => job.is_urgent);
+    }
+
+    if (filterWage !== 'all') {
+      const minWage = parseInt(filterWage);
+      filtered = filtered.filter(job => job.wage_per_hour >= minWage);
     }
 
     setFilteredJobs(filtered);
@@ -194,11 +202,43 @@ const Jobs = () => {
     return `${Math.round(hours / 24)} days`;
   };
 
+  const estimateEarnings = (job: Job) => {
+    const hours = job.total_hours || 8;
+    return Math.round(job.wage_per_hour * hours);
+  };
+
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i}>
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-6 w-20" />
+              </div>
+              <Skeleton className="h-4 w-full" />
+              <div className="flex gap-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-28" />
+                <Skeleton className="h-10 w-28" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
   if (loading) {
     return (
       <Layout title="Browse Jobs">
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="container mx-auto px-4 py-6">
+          <LoadingSkeleton />
         </div>
       </Layout>
     );
@@ -206,93 +246,158 @@ const Jobs = () => {
 
   return (
     <Layout title="Browse Jobs">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Available Opportunities</h2>
-          <p className="text-muted-foreground">Find your next part-time gig</p>
+      <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="space-y-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Available Opportunities</h2>
+          <p className="text-sm text-muted-foreground">Find your next part-time gig ({filteredJobs.length} jobs)</p>
         </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="space-y-3">
+          <div className="relative">
             <SearchNormal size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search jobs..."
+              placeholder="Search jobs, locations, event types..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Select value={filterCity} onValueChange={setFilterCity}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <Filter size={16} className="mr-2" />
-              <SelectValue placeholder="City" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Cities</SelectItem>
-              {getUniqueCities().map(city => (
-                <SelectItem key={city} value={city}>{city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterUrgent} onValueChange={setFilterUrgent}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Jobs</SelectItem>
-              <SelectItem value="urgent">Urgent Only</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Select value={filterCity} onValueChange={setFilterCity}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <Location size={16} className="mr-2 flex-shrink-0" />
+                <SelectValue placeholder="City" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cities</SelectItem>
+                {getUniqueCities().map(city => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterUrgent} onValueChange={setFilterUrgent}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <Filter size={16} className="mr-2 flex-shrink-0" />
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Jobs</SelectItem>
+                <SelectItem value="urgent">Urgent Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterWage} onValueChange={setFilterWage}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <MoneyRecive size={16} className="mr-2 flex-shrink-0" />
+                <SelectValue placeholder="Min Wage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Wage</SelectItem>
+                <SelectItem value="100">₹100+/hr</SelectItem>
+                <SelectItem value="200">₹200+/hr</SelectItem>
+                <SelectItem value="300">₹300+/hr</SelectItem>
+                <SelectItem value="500">₹500+/hr</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Jobs List */}
         {filteredJobs.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <p className="text-muted-foreground">No jobs found matching your criteria</p>
+          <Card className="border-dashed">
+            <CardContent className="p-8 sm:p-12 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <SearchNormal size={32} className="text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground">No jobs found matching your criteria</p>
+                <Button variant="outline" onClick={() => {
+                  setSearchTerm('');
+                  setFilterCity('all');
+                  setFilterUrgent('all');
+                  setFilterWage('all');
+                }}>
+                  Clear Filters
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredJobs.map((job) => (
-              <Card key={job.id} className="border-border hover:shadow-md transition-shadow">
+              <Card key={job.id} className="border-border hover:shadow-md transition-all duration-200 group">
                 <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1 flex-1">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
+                          <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                            {job.title}
+                          </h3>
                           {job.is_urgent && (
-                            <Badge className="bg-red-500 text-white">Urgent</Badge>
+                            <Badge className="bg-red-500 text-white text-xs">Urgent</Badge>
                           )}
                           {appliedJobs.has(job.id) && (
-                            <Badge variant="outline" className="border-green-500 text-green-500">Applied</Badge>
+                            <Badge variant="outline" className="border-green-500 text-green-500 text-xs">
+                              Applied
+                            </Badge>
                           )}
                         </div>
-                        <p className="text-muted-foreground line-clamp-2">{job.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{job.description}</p>
                       </div>
-                      {job.event_type && (
-                        <Badge variant="outline">{job.event_type}</Badge>
-                      )}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <JobBookmarkButton jobId={job.id} />
+                        {job.event_type && (
+                          <Badge variant="outline" className="hidden sm:inline-flex">{job.event_type}</Badge>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Location size={18} variant="Bold" className="text-primary" />
-                        <span className="text-muted-foreground">{job.city}</span>
+                    {/* Job Details Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Location size={16} variant="Bold" className="text-primary flex-shrink-0" />
+                        <span className="text-muted-foreground truncate">{job.city}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock size={18} variant="Bold" className="text-primary" />
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Clock size={16} variant="Bold" className="text-primary flex-shrink-0" />
                         <span className="text-muted-foreground">{getWorkDuration(job.start_date, job.end_date)}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Calendar size={16} variant="Bold" className="text-primary flex-shrink-0" />
+                        <span className="text-muted-foreground truncate">
+                          {format(new Date(job.start_date), 'MMM d')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <People size={16} variant="Bold" className="text-primary flex-shrink-0" />
+                        <span className="text-muted-foreground">
+                          {job.workers_hired}/{job.workers_needed} hired
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Wage and Earnings */}
+                    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border">
+                      <div className="flex items-center gap-1.5">
                         <MoneyRecive size={18} variant="Bold" className="text-green-500" />
                         <span className="font-semibold text-foreground">₹{job.wage_per_hour}/hour</span>
                       </div>
+                      <div className="text-sm text-muted-foreground">
+                        Est. earnings: <span className="font-medium text-green-600">₹{estimateEarnings(job)}</span>
+                      </div>
+                      {job.meal_provided && (
+                        <Badge variant="secondary" className="text-xs">🍽️ Meals</Badge>
+                      )}
+                      {job.transportation_provided && (
+                        <Badge variant="secondary" className="text-xs">🚗 Transport</Badge>
+                      )}
                     </div>
 
-                    <div className="flex gap-3">
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <Button 
                         onClick={() => handleApplyClick(job)}
                         disabled={appliedJobs.has(job.id) || job.workers_hired >= job.workers_needed}
@@ -300,7 +405,7 @@ const Jobs = () => {
                       >
                         {appliedJobs.has(job.id) ? 'Applied' : job.workers_hired >= job.workers_needed ? 'Position Filled' : 'Apply Now'}
                       </Button>
-                      <Button variant="outline" onClick={() => handleViewDetails(job)}>
+                      <Button variant="outline" onClick={() => handleViewDetails(job)} className="flex-1 sm:flex-none">
                         View Details
                       </Button>
                     </div>
