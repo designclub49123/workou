@@ -58,6 +58,41 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          job_id: string | null
+          last_message_at: string | null
+          participant_one: string
+          participant_two: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          job_id?: string | null
+          last_message_at?: string | null
+          participant_one: string
+          participant_two: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          job_id?: string | null
+          last_message_at?: string | null
+          participant_one?: string
+          participant_two?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_applications: {
         Row: {
           applicant_id: string
@@ -203,6 +238,35 @@ export type Database = {
           },
         ]
       }
+      job_views: {
+        Row: {
+          id: string
+          job_id: string
+          user_id: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_views_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           category_id: string | null
@@ -291,6 +355,44 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "job_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          job_id: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          job_id?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          job_id?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -494,6 +596,42 @@ export type Database = {
           },
         ]
       }
+      role_requests: {
+        Row: {
+          business_name: string | null
+          business_type: string | null
+          created_at: string | null
+          id: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          business_name?: string | null
+          business_type?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          business_name?: string | null
+          business_type?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       skills: {
         Row: {
           category: string | null
@@ -604,11 +742,42 @@ export type Database = {
           },
         ]
       }
+      worker_availability: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string | null
+          id: string
+          is_available: boolean | null
+          start_time: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time?: string | null
+          id?: string
+          is_available?: boolean | null
+          start_time?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string | null
+          id?: string
+          is_available?: boolean | null
+          start_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      approve_role_request: { Args: { request_id: string }; Returns: undefined }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
