@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import Layout from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft, MessageText1, SearchNormal } from 'iconsax-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import Layout from '@/components/layout/Layout';
 
 interface Conversation {
   id: string;
@@ -51,7 +50,6 @@ const Messages = () => {
     if (user) {
       fetchConversations();
       
-      // Subscribe to new messages
       const channel = supabase
         .channel('messages-channel')
         .on('postgres_changes', {
@@ -95,7 +93,6 @@ const Messages = () => {
 
       if (error) throw error;
 
-      // Fetch profiles and job titles for conversations
       const enrichedConversations = await Promise.all(
         (convData || []).map(async (conv) => {
           const otherUserId = conv.participant_one === user.id 
@@ -118,7 +115,6 @@ const Messages = () => {
             jobTitle = jobData?.title;
           }
 
-          // Get unread count
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
@@ -126,7 +122,6 @@ const Messages = () => {
             .eq('sender_id', otherUserId)
             .eq('is_read', false);
 
-          // Get last message
           const { data: lastMsgData } = await supabase
             .from('messages')
             .select('content')
@@ -166,7 +161,6 @@ const Messages = () => {
       if (error) throw error;
       setMessages(data || []);
 
-      // Mark messages as read
       await supabase
         .from('messages')
         .update({ is_read: true })
@@ -208,155 +202,175 @@ const Messages = () => {
     conv.job_title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <Layout title="Messages">
-      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-4">
-        {/* Conversations List */}
-        <Card className={cn(
-          "md:w-80 flex-shrink-0",
-          selectedConversation ? "hidden md:flex" : "flex",
-          "flex-col"
-        )}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MessageText1 size={20} variant="Bold" className="text-primary" />
-              Conversations
-            </CardTitle>
-            <div className="relative mt-2">
-              <SearchNormal size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search conversations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+  // Fullscreen chat view for mobile
+  if (selectedConversation) {
+    return (
+      <>
+        {/* Mobile fullscreen chat */}
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col md:hidden">
+          <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedConversation(null)}
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={selectedConversation.other_user?.avatar_url || ''} />
+              <AvatarFallback>
+                {selectedConversation.other_user?.full_name?.charAt(0) || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold truncate">
+                {selectedConversation.other_user?.full_name}
+              </p>
+              {selectedConversation.job_title && (
+                <p className="text-xs text-muted-foreground truncate">
+                  Re: {selectedConversation.job_title}
+                </p>
+              )}
             </div>
-          </CardHeader>
-          <CardContent className="flex-1 p-0 overflow-hidden">
-            <ScrollArea className="h-full">
-              {loading ? (
-                <div className="p-4 text-center text-muted-foreground">Loading...</div>
-              ) : filteredConversations.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  <MessageText1 size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>No conversations yet</p>
-                  <p className="text-xs mt-1">Start chatting with job posters!</p>
+          </div>
+
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-3">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    "flex",
+                    msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "max-w-[80%] px-4 py-2 rounded-2xl",
+                      msg.sender_id === user?.id
+                        ? "bg-primary text-primary-foreground rounded-br-md"
+                        : "bg-muted rounded-bl-md"
+                    )}
+                  >
+                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-[10px] mt-1 opacity-70">
+                      {format(new Date(msg.created_at), 'HH:mm')}
+                    </p>
+                  </div>
                 </div>
-              ) : (
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          <div className="p-4 border-t border-border bg-card">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                className="flex-1"
+              />
+              <Button 
+                onClick={sendMessage}
+                disabled={!newMessage.trim()}
+                size="icon"
+              >
+                <Send size={18} />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop chat view */}
+        <div className="hidden md:block">
+        <Layout title="Messages">
+          <div className="h-[calc(100vh-8rem)] flex gap-4">
+            <div className="w-80 flex-shrink-0 flex flex-col bg-card rounded-xl border border-border">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                  <MessageText1 size={20} variant="Bold" className="text-primary" />
+                  Conversations
+                </h2>
+                <div className="relative">
+                  <SearchNormal size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <ScrollArea className="flex-1">
                 <div className="divide-y divide-border">
                   {filteredConversations.map((conv) => (
                     <button
                       key={conv.id}
                       onClick={() => selectConversation(conv)}
                       className={cn(
-                        "w-full p-3 flex items-center gap-3 hover:bg-accent smooth-transition text-left",
+                        "w-full p-4 flex items-center gap-3 hover:bg-accent transition-colors text-left",
                         selectedConversation?.id === conv.id && "bg-accent"
                       )}
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={conv.other_user?.avatar_url || ''} />
-                        <AvatarFallback>
-                          {conv.other_user?.full_name?.charAt(0) || '?'}
-                        </AvatarFallback>
+                        <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || '?'}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium truncate text-sm">
-                            {conv.other_user?.full_name || 'Unknown'}
-                          </p>
-                          {conv.unread_count ? (
-                            <Badge className="gradient-primary text-white text-xs px-1.5">
-                              {conv.unread_count}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        {conv.job_title && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            Re: {conv.job_title}
-                          </p>
-                        )}
+                        <p className="font-medium truncate">{conv.other_user?.full_name || 'Unknown'}</p>
                         {conv.last_message && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {conv.last_message}
-                          </p>
+                          <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
                         )}
                       </div>
+                      {conv.unread_count ? (
+                        <Badge variant="destructive" className="text-xs">{conv.unread_count}</Badge>
+                      ) : null}
                     </button>
                   ))}
                 </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              </ScrollArea>
+            </div>
 
-        {/* Chat Area */}
-        <Card className={cn(
-          "flex-1 flex flex-col",
-          !selectedConversation ? "hidden md:flex" : "flex"
-        )}>
-          {selectedConversation ? (
-            <>
-              <CardHeader className="pb-3 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="md:hidden"
-                    onClick={() => setSelectedConversation(null)}
-                  >
-                    <ArrowLeft size={20} />
-                  </Button>
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedConversation.other_user?.avatar_url || ''} />
-                    <AvatarFallback>
-                      {selectedConversation.other_user?.full_name?.charAt(0) || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold">
-                      {selectedConversation.other_user?.full_name}
-                    </p>
-                    {selectedConversation.job_title && (
-                      <p className="text-xs text-muted-foreground">
-                        Re: {selectedConversation.job_title}
-                      </p>
-                    )}
-                  </div>
+            <div className="flex-1 bg-card rounded-xl border border-border flex flex-col">
+              <div className="flex items-center gap-3 p-4 border-b border-border">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={selectedConversation.other_user?.avatar_url || ''} />
+                  <AvatarFallback>{selectedConversation.other_user?.full_name?.charAt(0) || '?'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{selectedConversation.other_user?.full_name}</p>
+                  {selectedConversation.job_title && (
+                    <p className="text-xs text-muted-foreground">Re: {selectedConversation.job_title}</p>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent className="flex-1 p-4 overflow-hidden">
-                <ScrollArea className="h-full pr-4">
-                  <div className="space-y-3">
-                    {messages.map((msg) => (
+              </div>
+
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-3">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={cn("flex", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
+                    >
                       <div
-                        key={msg.id}
                         className={cn(
-                          "flex",
-                          msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                          "max-w-[70%] px-4 py-2 rounded-2xl",
+                          msg.sender_id === user?.id
+                            ? "bg-primary text-primary-foreground rounded-br-md"
+                            : "bg-muted rounded-bl-md"
                         )}
                       >
-                        <div
-                          className={cn(
-                            "max-w-[80%] px-4 py-2 rounded-2xl",
-                            msg.sender_id === user?.id
-                              ? "gradient-primary text-white rounded-br-md"
-                              : "bg-muted rounded-bl-md"
-                          )}
-                        >
-                          <p className="text-sm">{msg.content}</p>
-                          <p className={cn(
-                            "text-[10px] mt-1",
-                            msg.sender_id === user?.id ? "text-white/70" : "text-muted-foreground"
-                          )}>
-                            {format(new Date(msg.created_at), 'HH:mm')}
-                          </p>
-                        </div>
+                        <p className="text-sm">{msg.content}</p>
+                        <p className="text-[10px] mt-1 opacity-70">{format(new Date(msg.created_at), 'HH:mm')}</p>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-              </CardContent>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
               <div className="p-4 border-t border-border">
                 <div className="flex gap-2">
                   <Input
@@ -366,26 +380,89 @@ const Messages = () => {
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                     className="flex-1"
                   />
-                  <Button 
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim()}
-                    className="gradient-primary"
-                  >
-                    <Send size={18} />
+                  <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                    <Send size={18} className="mr-2" />
+                    Send
                   </Button>
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <MessageText1 size={64} className="mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">Select a conversation</p>
-                <p className="text-sm">Choose from your existing conversations</p>
-              </div>
             </div>
-          )}
-        </Card>
+          </div>
+        </Layout>
+        </div>
+      </>
+    );
+  }
+
+  // Conversation list view
+  return (
+    <Layout title="Messages">
+      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-4">
+        <div className="flex-1 md:w-80 md:flex-none flex flex-col bg-card rounded-xl border border-border">
+          <div className="p-4 border-b border-border">
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+              <MessageText1 size={20} variant="Bold" className="text-primary" />
+              Conversations
+            </h2>
+            <div className="relative">
+              <SearchNormal size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search conversations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <ScrollArea className="flex-1">
+            {loading ? (
+              <div className="p-4 text-center text-muted-foreground">Loading...</div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <MessageText1 size={48} className="mx-auto mb-2 opacity-50" />
+                <p className="font-medium">No conversations yet</p>
+                <p className="text-xs mt-1">Start chatting with job posters!</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {filteredConversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => selectConversation(conv)}
+                    className="w-full p-4 flex items-center gap-3 hover:bg-accent transition-colors text-left"
+                  >
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={conv.other_user?.avatar_url || ''} />
+                      <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || '?'}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium truncate">{conv.other_user?.full_name || 'Unknown'}</p>
+                        {conv.unread_count ? (
+                          <Badge variant="destructive" className="text-xs px-2">{conv.unread_count}</Badge>
+                        ) : null}
+                      </div>
+                      {conv.job_title && (
+                        <p className="text-xs text-primary truncate">Re: {conv.job_title}</p>
+                      )}
+                      {conv.last_message && (
+                        <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        <div className="hidden md:flex flex-1 bg-card rounded-xl border border-border items-center justify-center text-muted-foreground">
+          <div className="text-center">
+            <MessageText1 size={64} className="mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium">Select a conversation</p>
+            <p className="text-sm">Choose from your existing conversations</p>
+          </div>
+        </div>
       </div>
     </Layout>
   );
