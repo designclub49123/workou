@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Location, Clock, MoneyRecive, Calendar, Profile2User, ClipboardText, Briefcase } from 'iconsax-react';
 import { format } from 'date-fns';
+import StartChatButton from '@/components/chat/StartChatButton';
 
 interface Job {
   id: string;
@@ -24,6 +25,7 @@ interface Job {
   meal_provided: boolean;
   transportation_provided: boolean;
   status: string;
+  organizer_id?: string;
   organizer?: {
     full_name: string | null;
     rating: number | null;
@@ -206,21 +208,32 @@ export const JobDetailsDialog = ({ job, open, onOpenChange, onApply, hasApplied 
               <Separator />
               <div>
                 <h3 className="font-semibold mb-3">Organizer Information</h3>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Profile2User size={24} variant="Bold" className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{job.organizer.full_name || 'Anonymous'}</p>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      {job.organizer.rating !== null && (
-                        <span>⭐ {job.organizer.rating.toFixed(1)}</span>
-                      )}
-                      {job.organizer.total_jobs_completed !== null && (
-                        <span>• {job.organizer.total_jobs_completed} jobs completed</span>
-                      )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Profile2User size={24} variant="Bold" className="text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{job.organizer.full_name || 'Anonymous'}</p>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        {job.organizer.rating !== null && (
+                          <span>⭐ {job.organizer.rating.toFixed(1)}</span>
+                        )}
+                        {job.organizer.total_jobs_completed !== null && (
+                          <span>• {job.organizer.total_jobs_completed} jobs completed</span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {job.organizer_id && (
+                    <StartChatButton
+                      receiverId={job.organizer_id}
+                      receiverName={job.organizer.full_name || 'Organizer'}
+                      jobId={job.id}
+                      variant="outline"
+                      size="sm"
+                    />
+                  )}
                 </div>
               </div>
             </>

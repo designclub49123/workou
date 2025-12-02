@@ -20,6 +20,10 @@ import Notifications from "./pages/Notifications";
 import ActivityFeed from "./pages/ActivityFeed";
 import ManageApplications from "./pages/ManageApplications";
 import EarningsCalculator from "./pages/EarningsCalculator";
+import Messages from "./pages/Messages";
+import BecomeOrganizer from "./pages/BecomeOrganizer";
+import WorkerAvailability from "./pages/WorkerAvailability";
+import ManageRoleRequests from "./pages/ManageRoleRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +51,10 @@ const App = () => (
               <Route path="/activity" element={<ProtectedRoute><ActivityFeed /></ProtectedRoute>} />
               <Route path="/manage-applications" element={<ProtectedRoute allowedRoles={['organizer', 'admin']}><ManageApplications /></ProtectedRoute>} />
               <Route path="/earnings-calculator" element={<ProtectedRoute><EarningsCalculator /></ProtectedRoute>} />
+              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+              <Route path="/become-organizer" element={<ProtectedRoute><BecomeOrganizer /></ProtectedRoute>} />
+              <Route path="/availability" element={<ProtectedRoute><WorkerAvailability /></ProtectedRoute>} />
+              <Route path="/manage-role-requests" element={<ProtectedRoute allowedRoles={['admin']}><ManageRoleRequests /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

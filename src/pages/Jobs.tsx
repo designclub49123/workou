@@ -35,6 +35,7 @@ interface Job {
   transportation_provided: boolean;
   status: string;
   total_hours: number | null;
+  organizer_id: string;
   organizer?: {
     full_name: string | null;
     rating: number | null;
