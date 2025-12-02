@@ -1,6 +1,7 @@
 import { Notification, Sun1, Moon } from 'iconsax-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import MobileDrawer from './MobileDrawer';
 
 interface TopBarProps {
@@ -10,6 +11,7 @@ interface TopBarProps {
 
 const TopBar = ({ title, showNotification = true }: TopBarProps) => {
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border md:hidden">
@@ -32,9 +34,14 @@ const TopBar = ({ title, showNotification = true }: TopBarProps) => {
             )}
           </Button>
           {showNotification && (
-            <Button variant="ghost" size="icon" className="rounded-full relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full relative"
+              onClick={() => navigate('/notifications')}
+            >
               <Notification size={20} variant="Outline" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-brand-red rounded-full" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-gradient-to-r from-rose-500 to-orange-500 rounded-full" />
             </Button>
           )}
         </div>

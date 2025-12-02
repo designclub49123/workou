@@ -88,7 +88,7 @@ const MobileDrawer = () => {
   const renderNavSection = (items: typeof mainNavItems, title?: string) => (
     <>
       {title && (
-        <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <p className="px-4 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 mt-1">
           {title}
         </p>
       )}
@@ -96,30 +96,30 @@ const MobileDrawer = () => {
         <NavLink
           key={path}
           to={path}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors hover:bg-accent"
-          activeClassName="bg-accent"
+          className="flex items-center gap-4 px-4 py-3 rounded-xl transition-all hover:bg-accent mx-2"
+          activeClassName="bg-gradient-to-r from-rose-500/10 to-orange-500/10"
           onClick={() => setOpen(false)}
         >
           {({ isActive }) => (
             <>
               <Icon
-                size={20}
+                size={24}
                 variant={isActive ? 'Bold' : 'Outline'}
                 className={cn(
-                  'transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  'transition-colors flex-shrink-0',
+                  isActive ? 'text-rose-500' : 'text-muted-foreground'
                 )}
               />
               <span
                 className={cn(
-                  'flex-1 text-sm font-medium transition-colors',
+                  'flex-1 text-base font-medium transition-colors',
                   isActive ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
                 {label}
               </span>
               {badge ? (
-                <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
+                <Badge className="h-6 min-w-6 px-2 text-xs bg-gradient-to-r from-rose-500 to-orange-500 text-white border-0">
                   {badge}
                 </Badge>
               ) : null}
