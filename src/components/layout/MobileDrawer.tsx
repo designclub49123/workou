@@ -10,7 +10,7 @@ import {
 import { 
   HambergerMenu, Home2, BrifecaseTimer, Profile, Setting2, LogoutCurve, 
   Sun1, Moon, ClipboardText, AddCircle, SecurityUser, Heart, MessageText,
-  Notification, Calendar, Activity, People, UserAdd
+  Notification, Calendar, Activity, People, UserAdd, Wallet
 } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -70,14 +70,15 @@ const MobileDrawer = () => {
   ];
 
   const workerNavItems = [
-    { icon: Calendar, label: 'My Availability', path: '/worker-availability' },
-    { icon: Activity, label: 'Activity Feed', path: '/activity-feed' },
+    { icon: Calendar, label: 'My Availability', path: '/availability' },
+    { icon: Wallet, label: 'Earnings', path: '/earnings-calculator' },
+    { icon: Activity, label: 'Activity Feed', path: '/activity' },
   ];
 
   const accountNavItems = [
     { icon: Profile, label: 'Profile', path: '/profile' },
     { icon: Setting2, label: 'Settings', path: '/settings' },
-    { icon: UserAdd, label: 'Become Organizer', path: '/become-organizer' },
+    ...(isOrganizerOrAdmin ? [] : [{ icon: UserAdd, label: 'Become Organizer', path: '/become-organizer' }]),
   ];
 
   const adminNavItems = [
