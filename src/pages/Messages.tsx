@@ -6,9 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, MessageText1, SearchNormal } from 'iconsax-react';
+import { Send, ArrowLeft, MessageText1, SearchNormal, TickCircle, Clock, Microphone2, Paperclip, EmojiHappy } from 'iconsax-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import Layout from '@/components/layout/Layout';
 
 interface Conversation {
@@ -44,7 +44,10 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -175,10 +178,15 @@ const Messages = () => {
   const selectConversation = (conv: Conversation) => {
     setSelectedConversation(conv);
     fetchMessages(conv);
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation?.other_user || !user) return;
+    if (!newMessage.trim() || !selectedConversation?.other_user || !user || sendingMessage) return;
+
+    setSendingMessage(true);
+    const messageContent = newMessage.trim();
+    setNewMessage('');
 
     try {
       const { error } = await supabase
@@ -187,14 +195,30 @@ const Messages = () => {
           sender_id: user.id,
           receiver_id: selectedConversation.other_user.id,
           job_id: selectedConversation.job_id,
-          content: newMessage.trim()
+          content: messageContent
         });
 
       if (error) throw error;
-      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+      setNewMessage(messageContent);
+    } finally {
+      setSendingMessage(false);
     }
+  };
+
+  const formatMessageDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (isToday(date)) return format(date, 'HH:mm');
+    if (isYesterday(date)) return 'Yesterday ' + format(date, 'HH:mm');
+    return format(date, 'MMM d, HH:mm');
+  };
+
+  const formatConversationDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (isToday(date)) return format(date, 'HH:mm');
+    if (isYesterday(date)) return 'Yesterday';
+    return format(date, 'MMM d');
   };
 
   const filteredConversations = conversations.filter(conv =>
@@ -202,23 +226,42 @@ const Messages = () => {
     conv.job_title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const groupMessagesByDate = (messages: Message[]) => {
+    const groups: { [key: string]: Message[] } = {};
+    messages.forEach(msg => {
+      const date = new Date(msg.created_at);
+      let key = format(date, 'yyyy-MM-dd');
+      if (isToday(date)) key = 'Today';
+      else if (isYesterday(date)) key = 'Yesterday';
+      else key = format(date, 'MMMM d, yyyy');
+      
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(msg);
+    });
+    return groups;
+  };
+
   // Fullscreen chat view for mobile
   if (selectedConversation) {
+    const groupedMessages = groupMessagesByDate(messages);
+
     return (
       <>
         {/* Mobile fullscreen chat */}
         <div className="fixed inset-0 z-[100] bg-background flex flex-col md:hidden">
-          <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
+          {/* Chat Header */}
+          <div className="flex items-center gap-3 p-4 border-b border-border bg-card/95 backdrop-blur-sm">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSelectedConversation(null)}
+              className="hover:bg-accent"
             >
               <ArrowLeft size={20} />
             </Button>
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
               <AvatarImage src={selectedConversation.other_user?.avatar_url || ''} />
-              <AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-brand-red to-brand-orange text-white">
                 {selectedConversation.other_user?.full_name?.charAt(0) || '?'}
               </AvatarFallback>
             </Avatar>
@@ -227,57 +270,118 @@ const Messages = () => {
                 {selectedConversation.other_user?.full_name}
               </p>
               {selectedConversation.job_title && (
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-primary truncate flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                   Re: {selectedConversation.job_title}
                 </p>
               )}
             </div>
           </div>
 
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-3">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "flex",
-                    msg.sender_id === user?.id ? "justify-end" : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[80%] px-4 py-2 rounded-2xl",
-                      msg.sender_id === user?.id
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted rounded-bl-md"
-                    )}
-                  >
-                    <p className="text-sm">{msg.content}</p>
-                    <p className="text-[10px] mt-1 opacity-70">
-                      {format(new Date(msg.created_at), 'HH:mm')}
-                    </p>
+          {/* Messages Area */}
+          <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-accent/30 to-background">
+            <div className="space-y-4">
+              {Object.entries(groupedMessages).map(([date, msgs]) => (
+                <div key={date}>
+                  <div className="flex justify-center mb-3">
+                    <span className="text-xs text-muted-foreground bg-card px-3 py-1 rounded-full shadow-sm">
+                      {date}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {msgs.map((msg, idx) => (
+                      <div
+                        key={msg.id}
+                        className={cn(
+                          "flex animate-fade-in",
+                          msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                        )}
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        <div
+                          className={cn(
+                            "max-w-[80%] px-4 py-2.5 shadow-sm",
+                            msg.sender_id === user?.id
+                              ? "bg-gradient-to-br from-brand-red to-brand-orange text-white rounded-2xl rounded-br-md"
+                              : "bg-card border border-border rounded-2xl rounded-bl-md"
+                          )}
+                        >
+                          <p className="text-sm leading-relaxed">{msg.content}</p>
+                          <div className={cn(
+                            "flex items-center gap-1 mt-1",
+                            msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                          )}>
+                            <p className={cn(
+                              "text-[10px]",
+                              msg.sender_id === user?.id ? "text-white/70" : "text-muted-foreground"
+                            )}>
+                              {format(new Date(msg.created_at), 'HH:mm')}
+                            </p>
+                            {msg.sender_id === user?.id && (
+                              <TickCircle 
+                                size={12} 
+                                variant={msg.is_read ? "Bold" : "Linear"}
+                                className={msg.is_read ? "text-white" : "text-white/50"} 
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t border-border bg-card">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                className="flex-1"
-              />
+          {/* Message Input */}
+          <div className="p-3 border-t border-border bg-card/95 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-foreground">
+                <EmojiHappy size={22} />
+              </Button>
+              <div className="flex-1 relative">
+                <Input
+                  ref={inputRef}
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  className="pr-10 h-11 rounded-full bg-accent/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <Paperclip size={18} />
+                </Button>
+              </div>
               <Button 
                 onClick={sendMessage}
-                disabled={!newMessage.trim()}
+                disabled={!newMessage.trim() || sendingMessage}
                 size="icon"
+                className="shrink-0 h-11 w-11 rounded-full bg-gradient-to-br from-brand-red to-brand-orange hover:opacity-90 transition-all"
               >
-                <Send size={18} />
+                {sendingMessage ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : newMessage.trim() ? (
+                  <Send size={18} className="text-white" />
+                ) : (
+                  <Microphone2 size={18} className="text-white" />
+                )}
               </Button>
             </div>
           </div>
@@ -285,110 +389,179 @@ const Messages = () => {
 
         {/* Desktop chat view */}
         <div className="hidden md:block">
-        <Layout title="Messages">
-          <div className="h-[calc(100vh-8rem)] flex gap-4">
-            <div className="w-80 flex-shrink-0 flex flex-col bg-card rounded-xl border border-border">
-              <div className="p-4 border-b border-border">
-                <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
-                  <MessageText1 size={20} variant="Bold" className="text-primary" />
-                  Conversations
-                </h2>
-                <div className="relative">
-                  <SearchNormal size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
+          <Layout title="Messages">
+            <div className="h-[calc(100vh-8rem)] flex gap-4">
+              {/* Conversations sidebar */}
+              <div className="w-80 flex-shrink-0 flex flex-col bg-card rounded-xl border border-border overflow-hidden">
+                <div className="p-4 border-b border-border">
+                  <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                    <MessageText1 size={20} variant="Bold" className="text-primary" />
+                    Conversations
+                  </h2>
+                  <div className="relative">
+                    <SearchNormal size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 bg-accent/50 border-0"
+                    />
+                  </div>
                 </div>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="divide-y divide-border">
-                  {filteredConversations.map((conv) => (
-                    <button
-                      key={conv.id}
-                      onClick={() => selectConversation(conv)}
-                      className={cn(
-                        "w-full p-4 flex items-center gap-3 hover:bg-accent transition-colors text-left",
-                        selectedConversation?.id === conv.id && "bg-accent"
-                      )}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={conv.other_user?.avatar_url || ''} />
-                        <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || '?'}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{conv.other_user?.full_name || 'Unknown'}</p>
-                        {conv.last_message && (
-                          <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
-                        )}
-                      </div>
-                      {conv.unread_count ? (
-                        <Badge variant="destructive" className="text-xs">{conv.unread_count}</Badge>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            <div className="flex-1 bg-card rounded-xl border border-border flex flex-col">
-              <div className="flex items-center gap-3 p-4 border-b border-border">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedConversation.other_user?.avatar_url || ''} />
-                  <AvatarFallback>{selectedConversation.other_user?.full_name?.charAt(0) || '?'}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold">{selectedConversation.other_user?.full_name}</p>
-                  {selectedConversation.job_title && (
-                    <p className="text-xs text-muted-foreground">Re: {selectedConversation.job_title}</p>
-                  )}
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={cn("flex", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
-                    >
-                      <div
+                <ScrollArea className="flex-1">
+                  <div className="divide-y divide-border">
+                    {filteredConversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => selectConversation(conv)}
                         className={cn(
-                          "max-w-[70%] px-4 py-2 rounded-2xl",
-                          msg.sender_id === user?.id
-                            ? "bg-primary text-primary-foreground rounded-br-md"
-                            : "bg-muted rounded-bl-md"
+                          "w-full p-4 flex items-center gap-3 hover:bg-accent/50 transition-all text-left",
+                          selectedConversation?.id === conv.id && "bg-accent"
                         )}
                       >
-                        <p className="text-sm">{msg.content}</p>
-                        <p className="text-[10px] mt-1 opacity-70">{format(new Date(msg.created_at), 'HH:mm')}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+                        <div className="relative">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={conv.other_user?.avatar_url || ''} />
+                            <AvatarFallback className="bg-gradient-to-br from-brand-red to-brand-orange text-white">
+                              {conv.other_user?.full_name?.charAt(0) || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium truncate">{conv.other_user?.full_name || 'Unknown'}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {conv.last_message_at && formatConversationDate(conv.last_message_at)}
+                            </span>
+                          </div>
+                          {conv.job_title && (
+                            <p className="text-xs text-primary truncate">Re: {conv.job_title}</p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            {conv.last_message && (
+                              <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
+                            )}
+                            {conv.unread_count ? (
+                              <Badge className="bg-gradient-to-r from-brand-red to-brand-orange text-white text-xs px-2 ml-2">
+                                {conv.unread_count}
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
 
-              <div className="p-4 border-t border-border">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    className="flex-1"
-                  />
-                  <Button onClick={sendMessage} disabled={!newMessage.trim()}>
-                    <Send size={18} className="mr-2" />
-                    Send
-                  </Button>
+              {/* Chat area */}
+              <div className="flex-1 bg-card rounded-xl border border-border flex flex-col overflow-hidden">
+                <div className="flex items-center gap-3 p-4 border-b border-border">
+                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                    <AvatarImage src={selectedConversation.other_user?.avatar_url || ''} />
+                    <AvatarFallback className="bg-gradient-to-br from-brand-red to-brand-orange text-white">
+                      {selectedConversation.other_user?.full_name?.charAt(0) || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold">{selectedConversation.other_user?.full_name}</p>
+                    {selectedConversation.job_title && (
+                      <p className="text-xs text-primary flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        Re: {selectedConversation.job_title}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-accent/20 to-transparent">
+                  <div className="space-y-4">
+                    {Object.entries(groupedMessages).map(([date, msgs]) => (
+                      <div key={date}>
+                        <div className="flex justify-center mb-3">
+                          <span className="text-xs text-muted-foreground bg-accent px-3 py-1 rounded-full">
+                            {date}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {msgs.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className={cn("flex", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
+                            >
+                              <div
+                                className={cn(
+                                  "max-w-[70%] px-4 py-2.5 shadow-sm",
+                                  msg.sender_id === user?.id
+                                    ? "bg-gradient-to-br from-brand-red to-brand-orange text-white rounded-2xl rounded-br-md"
+                                    : "bg-accent rounded-2xl rounded-bl-md"
+                                )}
+                              >
+                                <p className="text-sm leading-relaxed">{msg.content}</p>
+                                <div className={cn(
+                                  "flex items-center gap-1 mt-1",
+                                  msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                                )}>
+                                  <p className={cn(
+                                    "text-[10px]",
+                                    msg.sender_id === user?.id ? "text-white/70" : "text-muted-foreground"
+                                  )}>
+                                    {format(new Date(msg.created_at), 'HH:mm')}
+                                  </p>
+                                  {msg.sender_id === user?.id && (
+                                    <TickCircle 
+                                      size={12} 
+                                      variant={msg.is_read ? "Bold" : "Linear"}
+                                      className={msg.is_read ? "text-white" : "text-white/50"} 
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                <div className="p-4 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="shrink-0">
+                      <EmojiHappy size={20} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="shrink-0">
+                      <Paperclip size={20} />
+                    </Button>
+                    <Input
+                      ref={inputRef}
+                      placeholder="Type a message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      className="flex-1 bg-accent/50 border-0"
+                    />
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={!newMessage.trim() || sendingMessage}
+                      className="bg-gradient-to-r from-brand-red to-brand-orange hover:opacity-90"
+                    >
+                      {sendingMessage ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        <>
+                          <Send size={18} className="mr-2" />
+                          Send
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Layout>
+          </Layout>
         </div>
       </>
     );
@@ -398,7 +571,7 @@ const Messages = () => {
   return (
     <Layout title="Messages">
       <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-4">
-        <div className="flex-1 md:w-80 md:flex-none flex flex-col bg-card rounded-xl border border-border">
+        <div className="flex-1 md:w-80 md:flex-none flex flex-col bg-card rounded-xl border border-border overflow-hidden">
           <div className="p-4 border-b border-border">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
               <MessageText1 size={20} variant="Bold" className="text-primary" />
@@ -410,44 +583,62 @@ const Messages = () => {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-accent/50 border-0"
               />
             </div>
           </div>
           <ScrollArea className="flex-1">
             {loading ? (
-              <div className="p-4 text-center text-muted-foreground">Loading...</div>
+              <div className="p-8 text-center">
+                <div className="h-8 w-8 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="mt-2 text-sm text-muted-foreground">Loading conversations...</p>
+              </div>
             ) : filteredConversations.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
-                <MessageText1 size={48} className="mx-auto mb-2 opacity-50" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent flex items-center justify-center">
+                  <MessageText1 size={32} className="opacity-50" />
+                </div>
                 <p className="font-medium">No conversations yet</p>
                 <p className="text-xs mt-1">Start chatting with job posters!</p>
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {filteredConversations.map((conv) => (
+                {filteredConversations.map((conv, idx) => (
                   <button
                     key={conv.id}
                     onClick={() => selectConversation(conv)}
-                    className="w-full p-4 flex items-center gap-3 hover:bg-accent transition-colors text-left"
+                    className="w-full p-4 flex items-center gap-3 hover:bg-accent/50 transition-all text-left animate-fade-in"
+                    style={{ animationDelay: `${idx * 50}ms` }}
                   >
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={conv.other_user?.avatar_url || ''} />
-                      <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || '?'}</AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={conv.other_user?.avatar_url || ''} />
+                        <AvatarFallback className="bg-gradient-to-br from-brand-red to-brand-orange text-white">
+                          {conv.other_user?.full_name?.charAt(0) || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="font-medium truncate">{conv.other_user?.full_name || 'Unknown'}</p>
-                        {conv.unread_count ? (
-                          <Badge variant="destructive" className="text-xs px-2">{conv.unread_count}</Badge>
-                        ) : null}
+                        <span className="text-xs text-muted-foreground">
+                          {conv.last_message_at && formatConversationDate(conv.last_message_at)}
+                        </span>
                       </div>
                       {conv.job_title && (
                         <p className="text-xs text-primary truncate">Re: {conv.job_title}</p>
                       )}
-                      {conv.last_message && (
-                        <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
-                      )}
+                      <div className="flex items-center justify-between">
+                        {conv.last_message && (
+                          <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
+                        )}
+                        {conv.unread_count ? (
+                          <Badge className="bg-gradient-to-r from-brand-red to-brand-orange text-white text-xs px-2 ml-2">
+                            {conv.unread_count}
+                          </Badge>
+                        ) : null}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -458,9 +649,11 @@ const Messages = () => {
 
         <div className="hidden md:flex flex-1 bg-card rounded-xl border border-border items-center justify-center text-muted-foreground">
           <div className="text-center">
-            <MessageText1 size={64} className="mx-auto mb-4 opacity-50" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-accent/50 flex items-center justify-center">
+              <MessageText1 size={40} className="opacity-50" />
+            </div>
             <p className="text-lg font-medium">Select a conversation</p>
-            <p className="text-sm">Choose from your existing conversations</p>
+            <p className="text-sm mt-1">Choose a chat from the list to start messaging</p>
           </div>
         </div>
       </div>

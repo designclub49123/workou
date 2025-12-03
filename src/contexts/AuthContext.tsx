@@ -11,6 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshUserRole: () => Promise<void>;
 }
@@ -47,14 +48,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer role fetching to avoid blocking
           setTimeout(() => {
             fetchUserRole(session.user.id);
           }, 0);
@@ -66,7 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -125,6 +123,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to sign in with Google');
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -148,6 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading, 
       signUp, 
       signIn, 
+      signInWithGoogle,
       signOut,
       refreshUserRole
     }}>
