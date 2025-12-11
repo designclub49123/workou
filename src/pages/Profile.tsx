@@ -363,27 +363,48 @@ const Profile = () => {
           />
         </div>
 
-        {/* Verification Status */}
-        <Card className="border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${verification.bg}`}>
-                  <verification.icon size={20} variant="Bold" className={verification.color} />
+        {/* Verification & Reliability Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${verification.bg}`}>
+                    <verification.icon size={20} variant="Bold" className={verification.color} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Verification Status</p>
+                    <p className={`text-sm ${verification.color}`}>{verification.text}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">Verification Status</p>
-                  <p className={`text-sm ${verification.color}`}>{verification.text}</p>
-                </div>
-              </div>
-              {profile?.verification_status !== 'verified' && (
-                <Button variant="outline" size="sm" onClick={() => toast.info('KYC verification coming soon!')}>
-                  Verify Now
+                <Button variant="outline" size="sm" onClick={() => navigate('/verification')}>
+                  {profile?.verification_status === 'verified' ? 'View' : 'Verify Now'}
                 </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${(profile?.reliability_score || 100) >= 80 ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
+                    <TrendUp size={20} variant="Bold" className={(profile?.reliability_score || 100) >= 80 ? 'text-emerald-500' : 'text-amber-500'} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Reliability Score</p>
+                    <p className={`text-sm font-semibold ${(profile?.reliability_score || 100) >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                      {profile?.reliability_score || 100}/100
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => navigate('/verification')}>
+                  Details
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Skills Section */}
         {skills.length > 0 && (
