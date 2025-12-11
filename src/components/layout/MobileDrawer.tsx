@@ -10,7 +10,7 @@ import {
 import { 
   HambergerMenu, Home2, BrifecaseTimer, Profile, Setting2, LogoutCurve, 
   Sun1, Moon, ClipboardText, AddCircle, SecurityUser, Heart, MessageText,
-  Notification, Calendar, Activity, People, UserAdd, Wallet
+  Notification, Calendar, Activity, People, UserAdd, Wallet, Shield
 } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -72,6 +72,7 @@ const MobileDrawer = () => {
   const workerNavItems = [
     { icon: Calendar, label: 'My Availability', path: '/availability' },
     { icon: Wallet, label: 'Earnings', path: '/earnings-calculator' },
+    { icon: Shield, label: 'Verification', path: '/verification' },
     { icon: Activity, label: 'Activity Feed', path: '/activity' },
   ];
 

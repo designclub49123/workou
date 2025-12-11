@@ -15,8 +15,8 @@ import {
   Calendar,
   Crown,
   Activity,
-  Calculator,
-  Wallet
+  Wallet,
+  Shield
 } from 'iconsax-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
@@ -91,6 +91,7 @@ const Sidebar = () => {
   const userNavItems = [
     { icon: Calendar, label: 'My Availability', path: '/availability' },
     { icon: Wallet, label: 'Earnings', path: '/earnings-calculator' },
+    { icon: Shield, label: 'Verification', path: '/verification' },
     { icon: Activity, label: 'Activity', path: '/activity' },
     { icon: Profile, label: 'Profile', path: '/profile' },
     { icon: Setting2, label: 'Settings', path: '/settings' },

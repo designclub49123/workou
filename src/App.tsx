@@ -24,6 +24,7 @@ import Messages from "./pages/Messages";
 import BecomeOrganizer from "./pages/BecomeOrganizer";
 import WorkerAvailability from "./pages/WorkerAvailability";
 import ManageRoleRequests from "./pages/ManageRoleRequests";
+import Verification from "./pages/Verification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/become-organizer" element={<ProtectedRoute><BecomeOrganizer /></ProtectedRoute>} />
               <Route path="/availability" element={<ProtectedRoute><WorkerAvailability /></ProtectedRoute>} />
               <Route path="/manage-role-requests" element={<ProtectedRoute allowedRoles={['admin']}><ManageRoleRequests /></ProtectedRoute>} />
+              <Route path="/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

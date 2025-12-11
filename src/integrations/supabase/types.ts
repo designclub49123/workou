@@ -58,6 +58,36 @@ export type Database = {
           },
         ]
       }
+      backup_pool: {
+        Row: {
+          called_at: string | null
+          created_at: string | null
+          id: string
+          job_id: string
+          response_at: string | null
+          status: string | null
+          worker_id: string
+        }
+        Insert: {
+          called_at?: string | null
+          created_at?: string | null
+          id?: string
+          job_id: string
+          response_at?: string | null
+          status?: string | null
+          worker_id: string
+        }
+        Update: {
+          called_at?: string | null
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          response_at?: string | null
+          status?: string | null
+          worker_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string | null
@@ -92,6 +122,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      emergency_contacts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          phone: string
+          relationship: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          phone: string
+          relationship: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          phone?: string
+          relationship?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       job_applications: {
         Row: {
@@ -269,6 +329,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          advance_payment_percent: number | null
           category_id: string | null
           city: string
           created_at: string | null
@@ -277,6 +338,7 @@ export type Database = {
           end_date: string
           event_type: string | null
           id: string
+          is_night_shift: boolean | null
           is_urgent: boolean | null
           latitude: number | null
           location: string
@@ -284,6 +346,7 @@ export type Database = {
           meal_provided: boolean | null
           organizer_id: string
           requirements: string[] | null
+          requires_transport: boolean | null
           start_date: string
           state: string | null
           status: Database["public"]["Enums"]["job_status"] | null
@@ -296,6 +359,7 @@ export type Database = {
           workers_needed: number
         }
         Insert: {
+          advance_payment_percent?: number | null
           category_id?: string | null
           city: string
           created_at?: string | null
@@ -304,6 +368,7 @@ export type Database = {
           end_date: string
           event_type?: string | null
           id?: string
+          is_night_shift?: boolean | null
           is_urgent?: boolean | null
           latitude?: number | null
           location: string
@@ -311,6 +376,7 @@ export type Database = {
           meal_provided?: boolean | null
           organizer_id: string
           requirements?: string[] | null
+          requires_transport?: boolean | null
           start_date: string
           state?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
@@ -323,6 +389,7 @@ export type Database = {
           workers_needed: number
         }
         Update: {
+          advance_payment_percent?: number | null
           category_id?: string | null
           city?: string
           created_at?: string | null
@@ -331,6 +398,7 @@ export type Database = {
           end_date?: string
           event_type?: string | null
           id?: string
+          is_night_shift?: boolean | null
           is_urgent?: boolean | null
           latitude?: number | null
           location?: string
@@ -338,6 +406,7 @@ export type Database = {
           meal_provided?: boolean | null
           organizer_id?: string
           requirements?: string[] | null
+          requires_transport?: boolean | null
           start_date?: string
           state?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
@@ -485,73 +554,160 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aadhaar_url: string | null
+          aadhaar_verified: boolean | null
           address: string | null
           avatar_url: string | null
+          backup_pool_member: boolean | null
+          ban_reason: string | null
+          banned_until: string | null
           bio: string | null
           city: string | null
+          college_id_url: string | null
+          college_id_verified: boolean | null
+          college_name: string | null
           created_at: string | null
           date_of_birth: string | null
           emergency_contact: string | null
           emergency_phone: string | null
+          face_photo_url: string | null
+          face_verified: boolean | null
           full_name: string | null
           id: string
           is_available: boolean | null
+          is_banned: boolean | null
           kyc_document_url: string | null
+          night_shift_opted_out: boolean | null
           phone: string | null
           pincode: string | null
           rating: number | null
+          reliability_score: number | null
           state: string | null
           total_jobs_completed: number | null
+          total_late_arrivals: number | null
+          total_no_shows: number | null
           updated_at: string | null
           verification_status:
             | Database["public"]["Enums"]["verification_status"]
             | null
+          working_radius_km: number | null
         }
         Insert: {
+          aadhaar_url?: string | null
+          aadhaar_verified?: boolean | null
           address?: string | null
           avatar_url?: string | null
+          backup_pool_member?: boolean | null
+          ban_reason?: string | null
+          banned_until?: string | null
           bio?: string | null
           city?: string | null
+          college_id_url?: string | null
+          college_id_verified?: boolean | null
+          college_name?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
+          face_photo_url?: string | null
+          face_verified?: boolean | null
           full_name?: string | null
           id: string
           is_available?: boolean | null
+          is_banned?: boolean | null
           kyc_document_url?: string | null
+          night_shift_opted_out?: boolean | null
           phone?: string | null
           pincode?: string | null
           rating?: number | null
+          reliability_score?: number | null
           state?: string | null
           total_jobs_completed?: number | null
+          total_late_arrivals?: number | null
+          total_no_shows?: number | null
           updated_at?: string | null
           verification_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
+          working_radius_km?: number | null
         }
         Update: {
+          aadhaar_url?: string | null
+          aadhaar_verified?: boolean | null
           address?: string | null
           avatar_url?: string | null
+          backup_pool_member?: boolean | null
+          ban_reason?: string | null
+          banned_until?: string | null
           bio?: string | null
           city?: string | null
+          college_id_url?: string | null
+          college_id_verified?: boolean | null
+          college_name?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
+          face_photo_url?: string | null
+          face_verified?: boolean | null
           full_name?: string | null
           id?: string
           is_available?: boolean | null
+          is_banned?: boolean | null
           kyc_document_url?: string | null
+          night_shift_opted_out?: boolean | null
           phone?: string | null
           pincode?: string | null
           rating?: number | null
+          reliability_score?: number | null
           state?: string | null
           total_jobs_completed?: number | null
+          total_late_arrivals?: number | null
+          total_no_shows?: number | null
           updated_at?: string | null
           verification_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
+          working_radius_km?: number | null
+        }
+        Relationships: []
+      }
+      qr_checkins: {
+        Row: {
+          checked_in_at: string | null
+          checked_out_at: string | null
+          created_at: string | null
+          id: string
+          is_late: boolean | null
+          job_id: string
+          minutes_late: number | null
+          qr_code: string
+          verified_by: string | null
+          worker_id: string
+        }
+        Insert: {
+          checked_in_at?: string | null
+          checked_out_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_late?: boolean | null
+          job_id: string
+          minutes_late?: number | null
+          qr_code: string
+          verified_by?: string | null
+          worker_id: string
+        }
+        Update: {
+          checked_in_at?: string | null
+          checked_out_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_late?: boolean | null
+          job_id?: string
+          minutes_late?: number | null
+          qr_code?: string
+          verified_by?: string | null
+          worker_id?: string
         }
         Relationships: []
       }
@@ -628,6 +784,39 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      safety_checkins: {
+        Row: {
+          checkin_type: string
+          created_at: string | null
+          id: string
+          job_id: string
+          latitude: number
+          longitude: number
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          checkin_type: string
+          created_at?: string | null
+          id?: string
+          job_id: string
+          latitude: number
+          longitude: number
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          checkin_type?: string
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          latitude?: number
+          longitude?: number
+          notes?: string | null
           user_id?: string
         }
         Relationships: []
