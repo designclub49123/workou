@@ -244,9 +244,15 @@ export const JobDetailsDialog = ({ job, open, onOpenChange, onApply, hasApplied 
           <Button 
             onClick={onApply}
             disabled={hasApplied || job.workers_hired >= job.workers_needed}
-            className="flex-1"
+            className={`flex-1 font-semibold transition-all duration-300 ${
+              hasApplied 
+                ? 'bg-green-500 hover:bg-green-600 text-white cursor-default border-0' 
+                : job.workers_hired >= job.workers_needed
+                ? 'bg-slate-400 text-white cursor-default border-0 hover:bg-slate-500'
+                : 'bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-md'
+            }`}
           >
-            {hasApplied ? 'Already Applied' : job.workers_hired >= job.workers_needed ? 'Position Filled' : 'Apply Now'}
+            {hasApplied ? '✓ Application Submitted' : job.workers_hired >= job.workers_needed ? '✗ Position Filled' : 'Apply Now'}
           </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
@@ -256,3 +262,4 @@ export const JobDetailsDialog = ({ job, open, onOpenChange, onApply, hasApplied 
     </Dialog>
   );
 };
+
