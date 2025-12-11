@@ -402,9 +402,15 @@ const Jobs = () => {
                       <Button 
                         onClick={() => handleApplyClick(job)}
                         disabled={appliedJobs.has(job.id) || job.workers_hired >= job.workers_needed}
-                        className="flex-1 sm:flex-none"
+                        className={`flex-1 sm:flex-none font-semibold transition-all duration-300 ${
+                          appliedJobs.has(job.id) 
+                            ? 'bg-green-500 hover:bg-green-600 text-white cursor-default border-0' 
+                            : job.workers_hired >= job.workers_needed
+                            ? 'bg-slate-400 text-white cursor-default border-0 hover:bg-slate-500'
+                            : 'bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-md'
+                        }`}
                       >
-                        {appliedJobs.has(job.id) ? 'Applied' : job.workers_hired >= job.workers_needed ? 'Position Filled' : 'Apply Now'}
+                        {appliedJobs.has(job.id) ? '✓ Applied' : job.workers_hired >= job.workers_needed ? '✗ Position Filled' : 'Apply Now'}
                       </Button>
                       <Button variant="outline" onClick={() => handleViewDetails(job)} className="flex-1 sm:flex-none">
                         View Details
