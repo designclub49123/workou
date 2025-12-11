@@ -157,11 +157,11 @@ const Dashboard = () => {
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {isOrganizer ? (
               <>
-                <Button onClick={() => navigate('/jobs/create')} className="w-full">
+                <Button onClick={() => navigate('/post-job')} className="w-full">
                   <BrifecaseTimer size={20} className="mr-2" />
                   Post New Job
                 </Button>
-                <Button onClick={() => navigate('/jobs')} variant="outline" className="w-full">
+                <Button onClick={() => navigate('/manage-applications')} variant="outline" className="w-full">
                   <People size={20} className="mr-2" />
                   View Applications
                 </Button>
