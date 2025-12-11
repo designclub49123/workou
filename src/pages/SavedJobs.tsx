@@ -284,8 +284,19 @@ const SavedJobs = () => {
 
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                         {isAvailable && !hasApplied && (
-                          <Button onClick={() => handleApplyClick(saved.job)} className="flex-1 sm:flex-none">
+                          <Button 
+                            onClick={() => handleApplyClick(saved.job)} 
+                            className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-all duration-300 shadow-md border-0"
+                          >
                             Apply Now
+                          </Button>
+                        )}
+                        {hasApplied && (
+                          <Button 
+                            disabled
+                            className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white cursor-default font-semibold border-0"
+                          >
+                            ✓ Applied
                           </Button>
                         )}
                         <Button
